@@ -136,6 +136,9 @@ export class GroupController {
     try {
       const studentsInGroup = await this.groupStudentRepository.find({ group_id: request.params.groupId })
 
+      // this loop can be avoided using foreign keys.
+      // didn't used foreign keys to save development time.
+      // although using parallel queries though Promise.all to save execution time.
       const students = await Promise.all(
         studentsInGroup.map((studentGroup) => {
           return new Promise((resolve, reject) => {

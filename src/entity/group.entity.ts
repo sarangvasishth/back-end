@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 import { CreateGroupInput, UpdateGroupInput } from "../interface/group.interface"
 
-import { LTMT_TYPES, ROLL_STATE_TYPES } from "../constants/enumTypes"
+import { LTMT_TYPES, ROLL_STATE_TYPES } from "../constants"
 
 @Entity()
 export class Group {

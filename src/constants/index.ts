@@ -1,3 +1,4 @@
+export const MIlLISECONDS_IN_WEEK = 604800000
 export enum ROLL_STATE_TYPES {
   UNMARK = "unmark",
   PRESENT = "present",

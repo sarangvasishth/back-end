@@ -1,4 +1,4 @@
-import { LTMT_TYPES, ROLL_STATE_TYPES } from "../constants/enumTypes"
+import { LTMT_TYPES, ROLL_STATE_TYPES } from "../constants"
 
 export interface CreateGroupInput {
   name: string

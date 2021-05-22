@@ -1,19 +1,36 @@
-import { getRepository } from "typeorm"
+import * as _ from "lodash"
+
+import { getRepository, MoreThan } from "typeorm"
+import { Roll } from "../entity/roll.entity"
 import { Group } from "../entity/group.entity"
 import { Student } from "../entity/student.entity"
 import { GroupStudent } from "../entity/group-student.entity"
-
+import { StudentRollState } from "../entity/student-roll-state.entity"
 import { NextFunction, Request, Response } from "express"
 import { CreateGroupInput, UpdateGroupInput } from "../interface/group.interface"
+import { CreateGroupStudentInput } from "../interface/group-student.interface"
 
 import ErrorHandler from "../utils/errorHandler"
 
 import { createGroupSchema, updateGroupSchema, getErrorMeassages } from "../utils/validation"
+import { MIlLISECONDS_IN_WEEK } from "../constants"
+import { keys } from "lodash"
+
+const comparisonDict = {
+  ">": function (x, y) {
+    return x > y
+  },
+  "<": function (x, y) {
+    return x < y
+  },
+}
 
 export class GroupController {
+  private rollRepository = getRepository(Roll)
   private groupRepository = getRepository(Group)
   private studentRepository = getRepository(Student)
   private groupStudentRepository = getRepository(GroupStudent)
+  private studentRollStateRepository = getRepository(StudentRollState)
 
   async allGroups(request: Request, response: Response, next: NextFunction) {
     try {
@@ -170,9 +187,72 @@ export class GroupController {
   }
 
   async runGroupFilters(request: Request, response: Response, next: NextFunction) {
-    // Task 2:
-    // 1. Clear out the groups (delete all the students from the groups)
-    // 2. For each group, query the student rolls to see which students match the filter for the group
-    // 3. Add the list of students that match the filter to the group
+    try {
+      // 1. Clear out the groups (delete all the students from the groups)
+      await this.groupStudentRepository.delete({})
+
+      // 2. For each group, query the student rolls to see which students match the filter for the group
+      const groups = await this.groupRepository.find()
+
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i]
+        const afterTime = new Date(Date.now() - group.number_of_weeks * MIlLISECONDS_IN_WEEK)
+        const rolls = await this.rollRepository.find({ completed_at: MoreThan(afterTime) })
+
+        const rollIds = rolls.map((roll) => roll.id)
+
+        const studentRollStates = await this.studentRollStateRepository
+          .createQueryBuilder("studentRollStates")
+          .where("studentRollStates.roll_id IN (:...ids)", {
+            ids: rollIds,
+          })
+          .andWhere("studentRollStates.state = :state", { state: group.roll_states })
+          .getMany()
+
+        const studentOccurences = _.countBy(studentRollStates, "student_id")
+
+        const studentIdsArray = Object.keys(studentOccurences).filter((key) => comparisonDict[group.ltmt](studentOccurences[key], group.incidents))
+
+        // 3. Add the list of students that match the filter to the group
+        for (let j = 0; j < studentIdsArray.length; j++) {
+          const studentId = studentIdsArray[i]
+
+          const createGroupStudentInput: CreateGroupStudentInput = {
+            group_id: group.id,
+            student_id: parseInt(studentId),
+            incident_count: studentOccurences[studentId],
+          }
+
+          const groupStudent = new GroupStudent()
+          groupStudent.prepareToCreate(createGroupStudentInput)
+
+          await this.groupStudentRepository.save(groupStudent)
+        }
+
+        const updateGroupInput: UpdateGroupInput = {
+          id: group.id,
+          name: group.name,
+          number_of_weeks: group.number_of_weeks,
+          roll_states: group.roll_states,
+          incidents: group.incidents,
+          ltmt: group.ltmt,
+          run_at: new Date(),
+          student_count: studentIdsArray.length,
+        }
+
+        group.prepareToUpdate(updateGroupInput)
+
+        await this.groupRepository.save(group)
+      }
+
+      response.status(200).json({
+        success: true,
+        data: {},
+        message: "Group filters ran successfully.",
+      })
+      return
+    } catch (err) {
+      next(new ErrorHandler(500, err.message))
+    }
   }
 }

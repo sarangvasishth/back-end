@@ -91,9 +91,27 @@ export class GroupController {
   }
 
   async removeGroup(request: Request, response: Response, next: NextFunction) {
-    let groupToRemove = await this.groupRepository.findOne(parseInt(request.params.id))
-    await this.groupRepository.remove(groupToRemove)
-    return { message: `Group with ${request.params.id} successfully removed.` }
+    if (!request.params.id) {
+      next(new ErrorHandler(400, "Group Id is required."))
+    }
+    try {
+      let groupToRemove = await this.groupRepository.findOne(request.params.id)
+
+      if (!groupToRemove) {
+        next(new ErrorHandler(400, "Group doesn't exist."))
+      }
+
+      await this.groupRepository.remove(groupToRemove)
+
+      response.status(200).json({
+        success: true,
+        data: {},
+        message: `Group with ${request.params.id} successfully removed.`,
+      })
+      return
+    } catch (err) {
+      next(new ErrorHandler(500, err.message))
+    }
   }
 
   async getGroupStudents(request: Request, response: Response, next: NextFunction) {

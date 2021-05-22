@@ -6,7 +6,7 @@ import { CreateGroupInput, UpdateGroupInput } from "../interface/group.interface
 
 import ErrorHandler from "../utils/errorHandler"
 
-import { createGroupSchema, getErrorMeassages } from "../utils/validation"
+import { createGroupSchema, updateGroupSchema, getErrorMeassages } from "../utils/validation"
 
 export class GroupController {
   private groupRepository = getRepository(Group)
@@ -53,10 +53,14 @@ export class GroupController {
   async updateGroup(request: Request, response: Response, next: NextFunction) {
     const { body: params } = request
 
-    console.log(params.id)
-
     try {
+      await updateGroupSchema.validateAsync(params)
       const group = await this.groupRepository.findOne(params.id)
+
+      if (!group) {
+        next(new ErrorHandler(400, "Group doesn't exist."))
+      }
+
       const updateGroupInput: UpdateGroupInput = {
         id: params.id,
         name: params.name,
@@ -67,12 +71,22 @@ export class GroupController {
         run_at: params.run_at,
         student_count: params.student_count,
       }
+
       group.prepareToUpdate(updateGroupInput)
 
-      return await this.groupRepository.save(group)
+      const res = await this.groupRepository.save(group)
+
+      response.status(200).json({
+        success: true,
+        data: res,
+      })
+      return
     } catch (err) {
-      console.log("errerrerrerrerrerrerrerrerrerrerrerr")
-      console.log(err)
+      if (err.details) {
+        err.message = getErrorMeassages(err.details)
+      }
+
+      next(new ErrorHandler(500, err.message))
     }
   }
 

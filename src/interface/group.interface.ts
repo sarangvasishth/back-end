@@ -9,3 +9,14 @@ export interface CreateGroupInput {
   run_at: Date
   student_count: number
 }
+
+export interface UpdateGroupInput {
+  id: number
+  name: string
+  number_of_weeks: number
+  roll_states: ROLL_STATE_TYPES
+  incidents: number
+  ltmt: LTMT_TYPES
+  run_at: Date
+  student_count: number
+}

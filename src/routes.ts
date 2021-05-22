@@ -94,6 +94,12 @@ export const Routes = [
     action: "createGroup",
   },
   {
+    method: "put",
+    route: "/group/update",
+    controller: GroupController,
+    action: "updateGroup",
+  },
+  {
     method: "delete",
     route: "/group/delete/:id",
     controller: GroupController,

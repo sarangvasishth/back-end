@@ -6,6 +6,7 @@ import * as cors from "cors"
 import { Request, Response } from "express"
 import { Routes } from "./routes"
 import { Student } from "./entity/student.entity"
+import errorMiddleware from "./middleware/error.middleware"
 
 createConnection()
   .then(async (connection) => {
@@ -13,6 +14,7 @@ createConnection()
     const app = express()
     app.use(cors())
     app.use(bodyParser.json())
+    app.use(errorMiddleware)
 
     // register express routes from defined application routes
     Routes.forEach((route) => {

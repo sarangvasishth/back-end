@@ -2,7 +2,11 @@ import { getRepository } from "typeorm"
 import { Group } from "../entity/group.entity"
 
 import { NextFunction, Request, Response } from "express"
-import { CreateGroupInput } from "../interface/group.interface"
+import { CreateGroupInput, UpdateGroupInput } from "../interface/group.interface"
+
+import ErrorHandler from "../utils/errorHandler"
+
+import { createGroupSchema, getErrorMeassages } from "../utils/validation"
 
 export class GroupController {
   private groupRepository = getRepository(Group)
@@ -14,24 +18,62 @@ export class GroupController {
   async createGroup(request: Request, response: Response, next: NextFunction) {
     const { body: params } = request
 
-    const createGroupInput: CreateGroupInput = {
-      name: params.name,
-      number_of_weeks: params.number_of_weeks,
-      roll_states: params.roll_states,
-      incidents: params.incidents,
-      ltmt: params.ltmt,
-      run_at: params.run_at,
-      student_count: 0,
-    }
-    const group = new Group()
-    group.prepareToCreate(createGroupInput)
+    try {
+      await createGroupSchema.validateAsync(params)
 
-    return this.groupRepository.save(group)
+      const createGroupInput: CreateGroupInput = {
+        name: params.name,
+        number_of_weeks: params.number_of_weeks,
+        roll_states: params.roll_states,
+        incidents: params.incidents,
+        ltmt: params.ltmt,
+        run_at: params.run_at,
+        student_count: params.student_count,
+      }
+
+      const group = new Group()
+      group.prepareToCreate(createGroupInput)
+
+      const res = await this.groupRepository.save(group)
+
+      response.status(200).json({
+        success: true,
+        data: res,
+      })
+      return
+    } catch (err) {
+      if (err.details) {
+        err.message = getErrorMeassages(err.details)
+      }
+
+      next(new ErrorHandler(500, err.message))
+    }
   }
 
   async updateGroup(request: Request, response: Response, next: NextFunction) {
-    // Task 1:
-    // Update a Group
+    const { body: params } = request
+
+    console.log(params.id)
+
+    try {
+      const group = await this.groupRepository.findOne(params.id)
+      const updateGroupInput: UpdateGroupInput = {
+        id: params.id,
+        name: params.name,
+        number_of_weeks: params.number_of_weeks,
+        roll_states: params.roll_states,
+        incidents: params.incidents,
+        ltmt: params.ltmt,
+        run_at: params.run_at,
+        student_count: params.student_count,
+      }
+      group.prepareToUpdate(updateGroupInput)
+
+      return await this.groupRepository.save(group)
+    } catch (err) {
+      console.log("errerrerrerrerrerrerrerrerrerrerrerr")
+      console.log(err)
+    }
   }
 
   async removeGroup(request: Request, response: Response, next: NextFunction) {

@@ -1,5 +1,7 @@
 import { getRepository } from "typeorm"
 import { Group } from "../entity/group.entity"
+import { Student } from "../entity/student.entity"
+import { GroupStudent } from "../entity/group-student.entity"
 
 import { NextFunction, Request, Response } from "express"
 import { CreateGroupInput, UpdateGroupInput } from "../interface/group.interface"
@@ -10,6 +12,8 @@ import { createGroupSchema, updateGroupSchema, getErrorMeassages } from "../util
 
 export class GroupController {
   private groupRepository = getRepository(Group)
+  private studentRepository = getRepository(Student)
+  private groupStudentRepository = getRepository(GroupStudent)
 
   async allGroups(request: Request, response: Response, next: NextFunction) {
     try {
@@ -125,8 +129,41 @@ export class GroupController {
   }
 
   async getGroupStudents(request: Request, response: Response, next: NextFunction) {
-    // Task 1:
-    // Return the list of Students that are in a Group
+    if (!request.params.groupId) {
+      next(new ErrorHandler(400, "Group Id is required."))
+    }
+
+    try {
+      const studentsInGroup = await this.groupStudentRepository.find({ group_id: request.params.groupId })
+
+      const students = await Promise.all(
+        studentsInGroup.map((studentGroup) => {
+          return new Promise((resolve, reject) => {
+            this.studentRepository
+              .findOne({ id: studentGroup.student_id })
+              .then((student) => {
+                resolve({
+                  id: student.id,
+                  first_name: student.first_name,
+                  last_name: student.last_name,
+                  full_name: `${student.first_name} ${student.last_name}`,
+                })
+              })
+              .catch((err) => {
+                reject(err)
+              })
+          })
+        })
+      )
+
+      response.status(200).json({
+        success: true,
+        data: { students },
+      })
+      return
+    } catch (err) {
+      next(new ErrorHandler(500, err.message))
+    }
   }
 
   async runGroupFilters(request: Request, response: Response, next: NextFunction) {

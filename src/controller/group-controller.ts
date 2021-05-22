@@ -12,7 +12,17 @@ export class GroupController {
   private groupRepository = getRepository(Group)
 
   async allGroups(request: Request, response: Response, next: NextFunction) {
-    return this.groupRepository.find()
+    try {
+      const groups = await this.groupRepository.find()
+
+      response.status(200).json({
+        success: true,
+        data: { groups },
+      })
+      return
+    } catch (err) {
+      next(new ErrorHandler(500, err.message))
+    }
   }
 
   async createGroup(request: Request, response: Response, next: NextFunction) {
@@ -38,7 +48,7 @@ export class GroupController {
 
       response.status(200).json({
         success: true,
-        data: res,
+        data: { group: res },
       })
       return
     } catch (err) {
@@ -78,7 +88,7 @@ export class GroupController {
 
       response.status(200).json({
         success: true,
-        data: res,
+        data: { group: res },
       })
       return
     } catch (err) {

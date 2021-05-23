@@ -3,4 +3,5 @@
 
 to run project
 
-``` npm start``` or ```nodemon``` 
+1. ```npm i```
+2. ```npm start``` or ```nodemon``` 

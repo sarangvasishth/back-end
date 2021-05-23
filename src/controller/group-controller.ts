@@ -187,7 +187,13 @@ export class GroupController {
 
     try {
       // 1. Clear out the groups (delete all the students from the groups)
-      await this.groupStudentRepository.delete({})
+      await queryRunner.manager.getRepository(GroupStudent).delete({})
+
+      // transaction check
+      // const items = await queryRunner.manager.find(GroupStudent)
+      // console.log(items)
+      // console.log(items.length)
+      // throw new Error("Transaction failed")
 
       // 2. For each group, query the student rolls to see which students match the filter for the group
       const groups = await queryRunner.manager.find(Group)
@@ -236,6 +242,7 @@ export class GroupController {
         group.prepareToUpdate(updateGroupInput)
         await queryRunner.manager.getRepository(Group).save(group)
       }
+      await queryRunner.commitTransaction()
 
       response.status(200).json({
         success: true,
@@ -247,7 +254,6 @@ export class GroupController {
       await queryRunner.rollbackTransaction()
       next(new ErrorHandler(500, err.message))
     } finally {
-      console.log("finallyfinallyfinallyfinallyfinallyfinally")
       await queryRunner.release()
     }
   }

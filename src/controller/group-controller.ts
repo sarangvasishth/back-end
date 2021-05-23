@@ -1,6 +1,6 @@
 import * as _ from "lodash"
 
-import { getRepository, MoreThan } from "typeorm"
+import { getRepository, getConnection, MoreThan } from "typeorm"
 import { Roll } from "../entity/roll.entity"
 import { Group } from "../entity/group.entity"
 import { Student } from "../entity/student.entity"
@@ -13,24 +13,12 @@ import { CreateGroupStudentInput } from "../interface/group-student.interface"
 import ErrorHandler from "../utils/errorHandler"
 
 import { createGroupSchema, updateGroupSchema, getErrorMeassages } from "../utils/validation"
-import { MIlLISECONDS_IN_WEEK } from "../constants"
-import { keys } from "lodash"
-
-const comparisonDict = {
-  ">": function (x, y) {
-    return x > y
-  },
-  "<": function (x, y) {
-    return x < y
-  },
-}
+import { COMPARISON_DICT, MILLISECONDS_IN_WEEK } from "../constants"
 
 export class GroupController {
-  private rollRepository = getRepository(Roll)
   private groupRepository = getRepository(Group)
   private studentRepository = getRepository(Student)
   private groupStudentRepository = getRepository(GroupStudent)
-  private studentRollStateRepository = getRepository(StudentRollState)
 
   async allGroups(request: Request, response: Response, next: NextFunction) {
     try {
@@ -187,21 +175,32 @@ export class GroupController {
   }
 
   async runGroupFilters(request: Request, response: Response, next: NextFunction) {
+    const connection = getConnection()
+    const queryRunner = connection.createQueryRunner()
+
+    try {
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
+    } catch (err) {
+      next(new ErrorHandler(500, err.message))
+    }
+
     try {
       // 1. Clear out the groups (delete all the students from the groups)
       await this.groupStudentRepository.delete({})
 
       // 2. For each group, query the student rolls to see which students match the filter for the group
-      const groups = await this.groupRepository.find()
+      const groups = await queryRunner.manager.find(Group)
 
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i]
-        const afterTime = new Date(Date.now() - group.number_of_weeks * MIlLISECONDS_IN_WEEK)
-        const rolls = await this.rollRepository.find({ completed_at: MoreThan(afterTime) })
+        const afterTime = new Date(Date.now() - group.number_of_weeks * MILLISECONDS_IN_WEEK)
 
+        const rolls = await queryRunner.manager.getRepository(Roll).find({ completed_at: MoreThan(afterTime) })
         const rollIds = rolls.map((roll) => roll.id)
 
-        const studentRollStates = await this.studentRollStateRepository
+        const studentRollStates = await queryRunner.manager
+          .getRepository(StudentRollState)
           .createQueryBuilder("studentRollStates")
           .where("studentRollStates.roll_id IN (:...ids)", {
             ids: rollIds,
@@ -210,25 +209,20 @@ export class GroupController {
           .getMany()
 
         const studentOccurences = _.countBy(studentRollStates, "student_id")
-
-        const studentIdsArray = Object.keys(studentOccurences).filter((key) => comparisonDict[group.ltmt](studentOccurences[key], group.incidents))
+        const studentIdsArray = Object.keys(studentOccurences).filter((key) => COMPARISON_DICT[group.ltmt](studentOccurences[key], group.incidents))
 
         // 3. Add the list of students that match the filter to the group
         for (let j = 0; j < studentIdsArray.length; j++) {
           const studentId = studentIdsArray[i]
-
           const createGroupStudentInput: CreateGroupStudentInput = {
             group_id: group.id,
             student_id: parseInt(studentId),
             incident_count: studentOccurences[studentId],
           }
-
           const groupStudent = new GroupStudent()
           groupStudent.prepareToCreate(createGroupStudentInput)
-
-          await this.groupStudentRepository.save(groupStudent)
+          await queryRunner.manager.getRepository(GroupStudent).save(groupStudent)
         }
-
         const updateGroupInput: UpdateGroupInput = {
           id: group.id,
           name: group.name,
@@ -239,10 +233,8 @@ export class GroupController {
           run_at: new Date(),
           student_count: studentIdsArray.length,
         }
-
         group.prepareToUpdate(updateGroupInput)
-
-        await this.groupRepository.save(group)
+        await queryRunner.manager.getRepository(Group).save(group)
       }
 
       response.status(200).json({
@@ -252,7 +244,11 @@ export class GroupController {
       })
       return
     } catch (err) {
+      await queryRunner.rollbackTransaction()
       next(new ErrorHandler(500, err.message))
+    } finally {
+      console.log("finallyfinallyfinallyfinallyfinallyfinally")
+      await queryRunner.release()
     }
   }
 }

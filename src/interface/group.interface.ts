@@ -1,11 +1,9 @@
-import { LTMT_TYPES, ROLL_STATE_TYPES } from "../constants"
-
 export interface CreateGroupInput {
   name: string
   number_of_weeks: number
-  roll_states: ROLL_STATE_TYPES
+  roll_states: string
   incidents: number
-  ltmt: LTMT_TYPES
+  ltmt: string
   run_at: Date
   student_count: number
 }
@@ -14,9 +12,9 @@ export interface UpdateGroupInput {
   id: number
   name: string
   number_of_weeks: number
-  roll_states: ROLL_STATE_TYPES
+  roll_states: string
   incidents: number
-  ltmt: LTMT_TYPES
+  ltmt: string
   run_at: Date
   student_count: number
 }

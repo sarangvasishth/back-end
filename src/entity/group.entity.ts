@@ -1,8 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 import { CreateGroupInput, UpdateGroupInput } from "../interface/group.interface"
 
-import { LTMT_TYPES, ROLL_STATE_TYPES } from "../constants"
-
 @Entity()
 export class Group {
   @PrimaryGeneratedColumn()
@@ -14,14 +12,18 @@ export class Group {
   @Column()
   number_of_weeks: number
 
-  @Column({ type: "simple-enum", enum: ROLL_STATE_TYPES })
-  roll_states: ROLL_STATE_TYPES
+  // @Column({ type: "simple-enum", enum: ROLL_STATE_TYPES })
+  // roll_states: ROLL_STATE_TYPES
+  @Column()
+  roll_states: string
 
   @Column()
   incidents: number
 
-  @Column({ type: "simple-enum", enum: LTMT_TYPES })
-  ltmt: LTMT_TYPES
+  // @Column({ type: "simple-enum", enum: LTMT_TYPES })
+  // ltmt: LTMT_TYPES
+  @Column()
+  ltmt: string
 
   @Column({
     nullable: true,

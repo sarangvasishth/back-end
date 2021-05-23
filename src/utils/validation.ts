@@ -3,9 +3,9 @@ import * as Joi from "joi"
 export const createGroupSchema = Joi.object({
   name: Joi.string().required(),
   number_of_weeks: Joi.number().required(),
-  roll_states: Joi.string().required(),
+  roll_states: Joi.string().required().valid("unmark", "present", "absent", "late"),
   incidents: Joi.number().required(),
-  ltmt: Joi.string().required(),
+  ltmt: Joi.string().required().valid("<", ">"),
   run_at: Joi.date(),
   student_count: Joi.number(),
 }).options({ abortEarly: false })

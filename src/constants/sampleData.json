@@ -1,0 +1,77 @@
+[
+  {
+    "student_id": 16,
+    "roll_id": 6,
+    "state": "unmark"
+  },
+  {
+    "student_id": 17,
+    "roll_id": 6,
+    "state": "absent"
+  },
+  {
+    "student_id": 18,
+    "roll_id": 6,
+    "state": "absent"
+  },
+  {
+    "student_id": 19,
+    "roll_id": 6,
+    "state": "late"
+  },
+  {
+    "student_id": 20,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 21,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 22,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 23,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 24,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 25,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 26,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 27,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 28,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 29,
+    "roll_id": 6,
+    "state": "present"
+  },
+  {
+    "student_id": 30,
+    "roll_id": 6,
+    "state": "present"
+  }
+]

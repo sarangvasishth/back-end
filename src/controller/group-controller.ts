@@ -16,12 +16,19 @@ import { createGroupSchema, updateGroupSchema, getErrorMeassages } from "../util
 import { COMPARISON_DICT, MILLISECONDS_IN_WEEK } from "../constants"
 
 export class GroupController {
+  private rollRepository = getRepository(Roll)
   private groupRepository = getRepository(Group)
   private studentRepository = getRepository(Student)
   private groupStudentRepository = getRepository(GroupStudent)
+  private studentRollRepository = getRepository(StudentRollState)
 
   async allGroups(request: Request, response: Response, next: NextFunction) {
     try {
+      // await this.rollRepository.delete({})
+      // await this.groupRepository.delete({})
+      // await this.groupStudentRepository.delete({})
+      // await this.studentRollRepository.delete({})
+
       const groups = await this.groupRepository.find()
 
       response.status(200).json({
@@ -219,7 +226,7 @@ export class GroupController {
 
         // 3. Add the list of students that match the filter to the group
         for (let j = 0; j < studentIdsArray.length; j++) {
-          const studentId = studentIdsArray[i]
+          const studentId = studentIdsArray[j]
           const createGroupStudentInput: CreateGroupStudentInput = {
             group_id: group.id,
             student_id: parseInt(studentId),
@@ -251,6 +258,7 @@ export class GroupController {
       })
       return
     } catch (err) {
+      console.log("rollback")
       await queryRunner.rollbackTransaction()
       next(new ErrorHandler(500, err.message))
     } finally {
